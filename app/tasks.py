@@ -26,6 +26,8 @@ def load_spot_dataset(dataset_path, tokenizer, max_length, debug):
         dataset = pd.read_csv(dataset_path, sep='\t')[:20]
     else:
         dataset = pd.read_csv(dataset_path, sep='\t')
+    dataset["sentence"] = dataset.sentence.apply(lambda x: x.lower())
+    dataset["query"] = dataset.sentence.apply(lambda x: x.lower())
     dataset = Dataset.from_pandas(dataset)
     dataset = dataset.map(
         lambda x: preprocess_function(x, max_length=max_length, tokenizer=tokenizer, input_col="sentence",
