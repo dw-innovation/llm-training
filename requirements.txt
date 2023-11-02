@@ -1,0 +1,9 @@
+datasets==2.14.6
+pandas==2.1.1
+loguru==0.7.2
+transformers==4.34.1
+peft==0.5.0
+accelerate==0.24.1
+loralib==0.1.1
+evaluate==0.4.1
+rouge-score
