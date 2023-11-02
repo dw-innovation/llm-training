@@ -1,3 +1,9 @@
+import os
+
+# comment the below lines if you need to use gpu 0.
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
+
 import torch
 import re
 import evaluate
@@ -31,6 +37,14 @@ def train(params: Dict):
     task_func = TASKS[task]
     logger.info(f"Training a model for the task {task}.")
     logger.info(f"Max length is {max_length}")
+
+
+    logger.info(f"Available devices are {torch.cuda.device_count()}")
+    for i in range(torch.cuda.device_count()):
+        logger.info(torch.cuda.get_device_properties(i).name)
+
+
+    torch.cuda.set_device(cuda_device)
 
     device = torch.device(f"cuda:{cuda_device}" if torch.cuda.is_available() else "cpu")
 
@@ -86,7 +100,7 @@ def train(params: Dict):
     if new_words:
         model.resize_token_embeddings(len(tokenizer))
 
-    model = model.to(device)
+    model.to(device)
 
     # define LoRA Config
     lora_config = LoraConfig(
@@ -138,7 +152,9 @@ def train(params: Dict):
     )
 
     logger.info(f"Training of {model_type} started.")
-    trainer.train()
+
+    with torch.cuda.device(cuda_device):
+        trainer.train()
 
     # Save our LoRA model & tokenizer results
     peft_model_id = model_output_path
