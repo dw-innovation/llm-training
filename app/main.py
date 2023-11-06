@@ -105,7 +105,7 @@ def train(params: Dict):
 
     # define LoRA Config
     lora_config = LoraConfig(
-        r=32,
+        r=16,
         lora_alpha=32,
         target_modules=["q", "v"],
         lora_dropout=0.1,
@@ -216,7 +216,7 @@ def test(params):
     for test_inst, generated_text in tqdm(zip(test_files, generated_texts), total=len(test_files)):
         predictions.append({
             "sentence": test_inst,
-            "generated_sentence": generated_text,
+            "generated_sentence": generated_text['generated_text'],
             "expected_sentence": test_ds.loc[test_ds['sentence'] == test_inst]['query'].values[0]
         })
 

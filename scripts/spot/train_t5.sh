@@ -1,10 +1,10 @@
 MODEL_TYPE=t5
 TASK=spot
 PRETRAINED_MODEL=t5-base
-MODEL_OUT=model/t5_tuned_base_minimized_v3_db-v9
+MODEL_OUT=model/t5-base-tuned
 MAX_LENGTH=1024
 EVAL_METRIC=eval_rougeLsum
-RESULT_FILE_PATH=results/t5_tuned_base_minimized_v3_db-v9_output.tsv
+RESULT_FILE_PATH=results/t5-base-tuned_output.tsv
 
 LEARNING_RATE=1e-3
 EPOCHS=10
