@@ -27,7 +27,7 @@ def load_spot_dataset(dataset_path, tokenizer, max_length, debug, test=False):
     else:
         dataset = pd.read_csv(dataset_path, sep='\t')
     dataset["sentence"] = dataset.sentence.apply(lambda x: x.lower())
-    dataset["imr"] = dataset.sentence.apply(lambda x: x.lower())
+    dataset["query"] = dataset.query.apply(lambda x: x.lower())
 
     if test:
         return dataset[['sentence', 'query']]
