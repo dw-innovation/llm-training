@@ -9,6 +9,7 @@ import torch
 import re
 import evaluate
 import numpy as np
+import pandas as pd
 from argparse import ArgumentParser
 from app.tasks import TASKS
 from typing import Dict
@@ -178,6 +179,7 @@ def test(params):
     model_type = params['model_type']
     test_file_path = params['test_file_path']
     model_output_path = params['model_output_path']
+    result_file_path = params['result_file_path']
     debug = params['debug']
 
     peft_model_id = model_output_path
@@ -218,6 +220,8 @@ def test(params):
             "expected_sentence": test_ds.loc[test_ds['sentence'] == test_inst]['query'].values[0]
         })
 
+    predictions = pd.DataFrame(predictions)
+    predictions.to_csv(result_file_path, sep='\t')
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -227,6 +231,7 @@ if __name__ == '__main__':
     parser.add_argument("--val_file_path")
     parser.add_argument("--test_file_path")
     parser.add_argument('--model_output_path')
+    parser.add_argument("--result_file_path")
     parser.add_argument('--random_seed', type=int)
     parser.add_argument("--train", action="store_true")
     parser.add_argument("--test", action="store_true")
