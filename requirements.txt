@@ -7,3 +7,4 @@ accelerate==0.24.1
 loralib==0.1.1
 evaluate==0.4.1
 rouge-score
+python-dotenv==1.0.0

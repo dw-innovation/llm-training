@@ -21,13 +21,17 @@ def preprocess_function(examples: Dict[str, Any], max_length: int, tokenizer: ob
     return model_inputs
 
 
-def load_spot_dataset(dataset_path, tokenizer, max_length, debug):
+def load_spot_dataset(dataset_path, tokenizer, max_length, debug, test=False):
     if debug:
         dataset = pd.read_csv(dataset_path, sep='\t')[:20]
     else:
         dataset = pd.read_csv(dataset_path, sep='\t')
     dataset["sentence"] = dataset.sentence.apply(lambda x: x.lower())
-    dataset["query"] = dataset.sentence.apply(lambda x: x.lower())
+    dataset["imr"] = dataset.sentence.apply(lambda x: x.lower())
+
+    if test:
+        return dataset[['sentence', 'query']]
+
     dataset = Dataset.from_pandas(dataset)
     dataset = dataset.map(
         lambda x: preprocess_function(x, max_length=max_length, tokenizer=tokenizer, input_col="sentence",

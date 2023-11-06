@@ -1,8 +1,9 @@
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
 # comment the below lines if you need to use gpu 0.
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = os.getenv('GPU_DEVICE')
 
 import torch
 import re
@@ -11,9 +12,10 @@ import numpy as np
 from argparse import ArgumentParser
 from app.tasks import TASKS
 from typing import Dict
+from tqdm import tqdm
 from app.util import set_random_seed
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq, Seq2SeqTrainingArguments, \
-    Seq2SeqTrainer, EarlyStoppingCallback
+    Seq2SeqTrainer, EarlyStoppingCallback, Text2TextGenerationPipeline
 from loguru import logger
 from peft import LoraConfig, get_peft_model, TaskType, PeftConfig, PeftModel
 
@@ -38,11 +40,9 @@ def train(params: Dict):
     logger.info(f"Training a model for the task {task}.")
     logger.info(f"Max length is {max_length}")
 
-
     logger.info(f"Available devices are {torch.cuda.device_count()}")
     for i in range(torch.cuda.device_count()):
         logger.info(torch.cuda.get_device_properties(i).name)
-
 
     torch.cuda.set_device(cuda_device)
 
@@ -148,7 +148,7 @@ def train(params: Dict):
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
-        callbacks=[EarlyStoppingCallback()]
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
     )
 
     logger.info(f"Training of {model_type} started.")
@@ -169,6 +169,54 @@ def train(params: Dict):
 
     if str(device) != "cpu":
         torch.cuda.empty_cache()
+
+
+def test(params):
+    task = params['task']
+    max_length = params['max_length']
+    cuda_device = params['cuda_device']
+    model_type = params['model_type']
+    test_file_path = params['test_file_path']
+    model_output_path = params['model_output_path']
+    debug = params['debug']
+
+    peft_model_id = model_output_path
+    config = PeftConfig.from_pretrained(model_output_path)
+
+    # load base LLM model and tokenizer
+    model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path)
+    tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
+
+    if 't5' in model_type:
+        new_words = ['{', '}']
+        logger.info("Adding the missing tokens.")
+        tokenizer.add_tokens(new_words)
+
+    model = PeftModel.from_pretrained(model, peft_model_id, device_map={"": 0})
+    model = model.merge_and_unload()
+    model.eval()
+
+    task_func = TASKS[task]
+    test_ds = task_func(dataset_path=test_file_path, tokenizer=tokenizer, max_length=max_length, debug=debug, test=True)
+
+    test_files = test_ds['sentence'].tolist()
+    device = torch.device(f"cuda:{cuda_device}" if torch.cuda.is_available() else "cpu")
+    pipeline = Text2TextGenerationPipeline(model=model, batch_size=16,
+                                           tokenizer=tokenizer,
+                                           device=device,  # model.device,
+                                           clean_up_tokenization_spaces=True)
+    logger.info('Getting predictions...')
+    generated_texts = pipeline(test_files, do_sample=False, max_length=max_length, pad_token_id=tokenizer.pad_token_id)
+
+    logger.info('Predictions is done.')
+
+    predictions = []
+    for test_inst, generated_text in tqdm(zip(test_files, generated_texts), total=len(test_files)):
+        predictions.append({
+            "sentence": test_inst,
+            "generated_sentence": generated_text,
+            "expected_sentence": test_ds.loc[test_ds['sentence'] == test_inst]['query'].values[0]
+        })
 
 
 if __name__ == '__main__':
@@ -205,3 +253,6 @@ if __name__ == '__main__':
 
     if args.train:
         train(params)
+
+    if args.test:
+        test(params)
