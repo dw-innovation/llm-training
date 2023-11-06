@@ -1,10 +1,10 @@
-MODEL_TYPE=t5
+MODEL_TYPE=llama
 TASK=spot
-PRETRAINED_MODEL=t5-base
-MODEL_OUT=model/t5-base-tuned
+PRETRAINED_MODEL=meta-llama/Llama-2-7b-hf
+MODEL_OUT=llama2_tuned
 MAX_LENGTH=1024
 EVAL_METRIC=eval_rouge2
-RESULT_FILE_PATH=results/t5-base-tuned_output.tsv
+RESULT_FILE_PATH=results/llama2_tuned_output.tsv
 
 LEARNING_RATE=1e-3
 EPOCHS=10

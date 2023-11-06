@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 # comment the below lines if you need to use gpu 0.
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -12,11 +13,12 @@ import numpy as np
 import pandas as pd
 from argparse import ArgumentParser
 from app.tasks import TASKS
+from app.models import MODELS
 from typing import Dict
 from tqdm import tqdm
 from app.util import set_random_seed
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq, Seq2SeqTrainingArguments, \
-    Seq2SeqTrainer, EarlyStoppingCallback, Text2TextGenerationPipeline
+from transformers import (AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq,
+                          EarlyStoppingCallback, Text2TextGenerationPipeline)
 from loguru import logger
 from peft import LoraConfig, get_peft_model, TaskType, PeftConfig, PeftModel
 
@@ -96,7 +98,8 @@ def train(params: Dict):
     val_ds = task_func(dataset_path=val_file_path, tokenizer=tokenizer, max_length=max_length, debug=debug)
 
     # declare model
-    model = AutoModelForSeq2SeqLM.from_pretrained(pretrained_model)
+    MODEL = MODELS[model_type]()
+    model = MODEL.load(pretrained_model)
 
     if new_words:
         model.resize_token_embeddings(len(tokenizer))
@@ -122,7 +125,7 @@ def train(params: Dict):
                                            pad_to_multiple_of=8)
 
     # declare training arguments
-    training_args = Seq2SeqTrainingArguments(
+    training_args = MODEL.training_args(
         output_dir=model_output_path,
         evaluation_strategy="epoch",
         do_eval=True,
@@ -141,7 +144,7 @@ def train(params: Dict):
     )
 
     # declare trainer
-    trainer = Seq2SeqTrainer(
+    trainer = MODEL.trainer(
         model=model,
         args=training_args,
         train_dataset=train_ds,
@@ -222,6 +225,7 @@ def test(params):
 
     predictions = pd.DataFrame(predictions)
     predictions.to_csv(result_file_path, sep='\t')
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
