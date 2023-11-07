@@ -1,10 +1,10 @@
 MODEL_TYPE=t5
 TASK=spot
 PRETRAINED_MODEL=t5-base
-MODEL_OUT=model/t5-base-tuned
+MODEL_OUT=model/t5_tuned_base_minimized_v3_db-v9
 MAX_LENGTH=1024
 EVAL_METRIC=eval_rouge2
-RESULT_FILE_PATH=results/t5-base-tuned_output.tsv
+RESULT_FILE_PATH=results/t5_tuned_base_minimized_v3_db-v9_output.tsv
 
 LEARNING_RATE=1e-3
 EPOCHS=10
@@ -35,7 +35,5 @@ python3 -m app.main \
 --max_length $MAX_LENGTH \
 --eval_metric $EVAL_METRIC \
 --result_file_path $RESULT_FILE_PATH \
---test \
---debug \
---train
+--test
 
