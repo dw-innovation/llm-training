@@ -1,22 +1,25 @@
 MODEL_TYPE=t5
 TASK=spot
 PRETRAINED_MODEL=t5-base
-MODEL_OUT=model/t5_tuned_base_minimized_v3_db-v9
+DATASET_VERSION=v10
+MODEL_VERSION=v2
+MODEL_OUT=model/t5_tuned_base_minimized_${MODEL_VERSION}_db-${DATASET_VERSION}
 MAX_LENGTH=1024
 EVAL_METRIC=eval_rouge2
-RESULT_FILE_PATH=results/t5_tuned_base_minimized_v3_db-v9_output.tsv
+RESULT_FILE_PATH=results/t5_tuned_base_minimized_${MODEL_VERSION}_db-${DATASET_VERSION}_output.tsv
 
 LEARNING_RATE=1e-3
-EPOCHS=10
+EPOCHS=50
 RANDOM_SEED=0
 
-TRAIN_DATASET=tasks/spot/v9/IMR_Dataset_v9_train_ChatNL_minimized.csv
-VAL_DATASET=tasks/spot/v9/IMR_Dataset_v9_dev_ChatNL_minimized.csv
-TEST_DATASET=tasks/spot/v9/IMR_Dataset_v9_test_ChatNL_minimized.csv
+TRAIN_DATASET=tasks/spot/${DATASET_VERSION}/IMR_Dataset_${DATASET_VERSION}_train_ChatNL_minimized.csv
+VAL_DATASET=tasks/spot/${DATASET_VERSION}/IMR_Dataset_${DATASET_VERSION}_dev_ChatNL_minimized.csv
+TEST_DATASET=tasks/spot/${DATASET_VERSION}/IMR_Dataset_${DATASET_VERSION}_test_ChatNL_minimized.csv
 
 CUDA_DEVICE=0
 
 mkdir -p results
+mkdir -p model
 
 echo $MODEL training
 
@@ -35,5 +38,5 @@ python3 -m app.main \
 --max_length $MAX_LENGTH \
 --eval_metric $EVAL_METRIC \
 --result_file_path $RESULT_FILE_PATH \
---test
-
+--test \
+--train

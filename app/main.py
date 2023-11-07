@@ -82,9 +82,9 @@ def train(params: Dict):
         # Decode reference summaries into text
         decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
         # ROUGE expects a newline after each sentence
-        decoded_preds = ["\n".join(re.split('(?<=[!.?])', pred.strip())) for pred in decoded_preds]
+        decoded_preds = ["\n".join(pred.strip()) for pred in decoded_preds]
 
-        decoded_labels = ["\n".join(re.split('(?<=[!.?])', label.strip())) for label in decoded_labels]
+        decoded_labels = ["\n".join(label.strip()) for label in decoded_labels]
         # Compute ROUGscores
         result = rouge_score.compute(
             predictions=decoded_preds, references=decoded_labels, use_stemmer=True
