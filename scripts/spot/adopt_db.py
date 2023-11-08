@@ -75,4 +75,7 @@ if __name__ == '__main__':
     print(f"Number of samples after process {len(df)}")
 
     df = df[["sentence", "query"]]
+
+    df["query"] = df["query"].apply(lambda x:json.dumps(x))
+
     df.to_csv(args.output_file, sep="\t", index=False)
