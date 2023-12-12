@@ -1,8 +1,9 @@
 import os
+import json
 from huggingface_hub import InferenceClient, login
 from argparse import ArgumentParser
 from transformers import AutoTokenizer
-import pandas as pd
+from tqdm import tqdm
 from app.nshot.json_extractor import json_extractor
 from dotenv import load_dotenv
 
@@ -41,6 +42,8 @@ def read_prompt_file(prompt_file):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--prompt_file", type=str, required=True)
+    parser.add_argument("--input_file", type=str, required=True)
+    parser.add_argument("--result_file", type=str, required=True)
 
     args = parser.parse_args()
 
@@ -53,14 +56,15 @@ if __name__ == '__main__':
 
     sys_message = read_prompt_file(prompt_file=args.prompt_file)
 
-    samples = pd.read_csv("tasks/spot/v10/IMR_Dataset_v10_dev_ChatNL_minimized.csv", sep='\t').sample(5)
+    with open(args.input_file, 'r') as input_file:
+        sentences = input_file.readlines()
 
-    for idx, sample in samples.iterrows():
-        query = sample["sentence"]
-        generated_text = generate(llama2_prompt.format(sentence=query, sys_message=sys_message))
-        json_data = json_extractor(generated_text)
-
-        if json_data is not None:
-            json_data["sentence"] = query
-
-        print(json_data)
+        with open(args.result_file, 'w') as outfile:
+            for sentence in tqdm(sentences, total=len(sentences)):
+                json_data = {"sentence": sentence}
+                sentence = sentence.rstrip()
+                generated_text = generate(llama2_prompt.format(sentence=sentence, sys_message=sys_message))
+                json_data["model_result"] = generated_text
+                json_data["parsed_result"] = json_extractor(generated_text)
+                json.dump(json_data, outfile)
+                outfile.write('\n')
