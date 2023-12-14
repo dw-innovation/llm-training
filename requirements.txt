@@ -10,3 +10,6 @@ rouge-score
 python-dotenv==1.0.0
 sentencepiece
 protobuf
+langchain==0.0.345
+jinja2==3.1.2
+strictyaml==1.7.3

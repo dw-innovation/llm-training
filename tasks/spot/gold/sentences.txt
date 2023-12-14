@@ -1,0 +1,80 @@
+sentence
+Show me all kiosks not further away than 100m from a park in Berlin
+Show me all motels within a 5 miles radius from the main railroad station in Delaware
+Show me all kiosks inside a park in Paris
+show me all cafes in the Athens Mall
+Show me all gyms above a restaurant in Berlin
+Show me all parking garages opposite of a gas station
+Show me all tram stations with a theater in the background in The Hague in the Netherlands
+Where is a billboard behind a pedestrian crossing in Tokyo
+Show me a high rise next to the beach in Barcelona
+a sportsclub that is within 200 meters from a train station and a bakery in München
+show me a restaurant that is no more than 100 meters away from a traffic light and an advertisement column in Dublin
+Show me a kiosk that is within 20 meters from a supermarket that is max 200 meters from an italian restaurant in Neuköln, Berlin
+show me a cafe that is within a radius of 300 meters from an elementary school and a library
+show me a mall in brussels, belgium, with a McDonalds, a zara and an H&M in there
+show me a footpath crossing a bus lane in central Köln
+show me all bicycle lanes in city centre Bonn
+Show me all train tracks between Köln and Bonn
+Show me all metro tracks inside Singapore
+Show me all tracks between Wedding and Neukölln
+Show me the whole track of M10 in Berlin
+Show me all crossings of the metro and tram lines in Berlin
+Show me all train tracks that exit Moscow in the East
+Show me all train track border crossings between Germany and Poland
+Show me all intersections of U7 with any other metro line in Berlin
+Show me the track lanes for cargo trains from Hamburg to Berlin
+show me all buidlings higher than 20 levels in Manhattan
+show me all buildings higher than 260 meters in the Haizu district, Guanzhou, China
+show me all buildings with a copper roof in Versailles
+show me a shop with a blue and yellow wall in Les Clayes sous Bois in France
+Show me all bars in Pathum Wan that are at least 80 meters above the ground.
+show me a shop with a phone number ending on 2645 in Berlin Neuköln
+show me all shops that are owned by Zara in Berlin central
+show me all shops with a name that contains the letters *ården on Strøget in Kopenhagen
+show me all gardening shops in Meckernich
+show me all restaurants with a terrace in Remagen
+show me all Italian restaurants in wellington that have outdoor seating
+show me all restaurants from jamie oliver in London
+show me all bars in Oxford that have the letters orts in their name
+Show me all Casinos in Karen State
+show me all Indonesian restaurants in The Hague
+Show me all gas stations on highway number 1 in Yangon
+Show me all hospitals next to a river in Koblenz
+Show me all gynaecologist in Koblenz
+Show me all pharmacies that are open on Saturdays in Budapest
+Show me all hotels in the north of Krakow
+Show me all Ibis hotels at the Baltic sea
+Show me all gas stations that have a shop around Вёска Новыя Градкі
+Show me all hospitals with a psychiatric department in Amsterdam
+show me all kindergarden in Huelva
+show me all schools in Palermo
+show me all universities in Thessaloniki
+show me all schools that have pupils from 7 till 12 years old in Apeldoorn
+Show me all Montessori schools in Groningen
+Show me all schools that teach in English in Bonn
+Show me all dancing schools in Plaka, Athens
+Show me all shopping malls in Munich
+Show me all military bases in Myanmar
+Show me all military airfields in western Russia
+Show me all military offices in Kyiv
+Show me all military institutions in Kyiv
+Show me all shopping streets in Frankfurt
+Show me all family neighbourhoods in Detroit
+Show me all car factories in Germany
+Show me all chemical plants in Leverkusen
+show me all pedestrian bridges in central Paris
+Show me all fountains in Bonn
+Show me all minarettes in Karbala, Irak
+Show me all castles in Koblenz
+Show me all telecommunication towers in Karen State, Myanmar
+Show me a bicycle lane next to a bus lane in Cologne
+I am looking for a street with a fountain, a kiosk and a military base. The fountain should be no more than 100yd away from the kiosk, and the kiosk should be like max 10 kilometers away from the military base.
+Please show me all cafés in Ouagadougou on rue pavée that are within 2 miles from a moat, that is nearby an office buiding that is 35m high.
+show me all hair dressers on the Bonner Talweg in Bonn
+Show me all bars in Pathum Wan
+Show me all hospitals in Michigan
+Show me all public toilets in the Haut Fagnes, Belgium
+Show me police stations in Westerwald
+Show me all immigration offices in Bavaria
+Show me all nuclear power plants in France
