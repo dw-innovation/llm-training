@@ -1,4 +1,3 @@
-import re
 import yaml
 import logging
 
@@ -7,7 +6,10 @@ ENT_REL_PATTERN = r'area:\s*(.*?)entities:\s*(.*?)relations:\s*(.*?)$'
 
 
 def json_extractor(input_string):
+    if isinstance(input_string, tuple):
+        _, input_string = input_string
     json_data = None
+    input_string = input_string.replace('```yaml', '').replace('```', '')
     input_string = input_string.replace('*', '-').replace('+', '-')
     input_string = input_string.replace('material:', 'material')
 

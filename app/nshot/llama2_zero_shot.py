@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 from tqdm import tqdm
 from app.nshot.json_extractor import json_extractor
 from dotenv import load_dotenv
+from app.nshot.utils import read_prompt_file
 
 load_dotenv()
 # access token with permission to access the model and PRO subscription
@@ -31,13 +32,6 @@ def generate(text):
         temperature=0.6,
     )
     return res.strip()
-
-
-def read_prompt_file(prompt_file):
-    with open(prompt_file, 'r') as file:
-        prompt_msg = file.read()
-        return prompt_msg
-
 
 if __name__ == '__main__':
     parser = ArgumentParser()
