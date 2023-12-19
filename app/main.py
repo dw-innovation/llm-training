@@ -220,7 +220,7 @@ def test(params):
         predictions.append({
             "sentence": test_inst,
             "generated_sentence": generated_text['generated_text'],
-            "expected_sentence": test_ds.loc[test_ds['sentence'] == test_inst]['query'].values[0]
+            "expected_sentence": test_ds.loc[test_ds['sentence'] == test_inst]['query'].values[0] if "query" in test_ds else None
         })
 
     predictions = pd.DataFrame(predictions)
