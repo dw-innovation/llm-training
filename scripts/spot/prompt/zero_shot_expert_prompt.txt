@@ -1,0 +1,12 @@
+Please use the results from the last used example and output them in the following YAML format:
+area:
+ - name: [area name 1]
+ - name: [area name 2]
+entities:
+ - name: [entity name 1]
+   id: [entity id 1]
+relations:
+ - source: [entity id 1]
+   target: [entity id 2]
+   relation: [relation between entity 1 and entity 2]
+   distance: [relation distance]

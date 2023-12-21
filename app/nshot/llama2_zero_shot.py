@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     with open(args.input_file, 'r') as input_file:
         sentences = input_file.readlines()
-
+        sentences = sentences[1:-1]
         with open(args.result_file, 'w') as outfile:
             for sentence in tqdm(sentences, total=len(sentences)):
                 json_data = {"sentence": sentence}

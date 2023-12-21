@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -7,10 +8,8 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = os.getenv('GPU_DEVICE')
 
 import torch
-import re
 import evaluate
 import numpy as np
-import pandas as pd
 from argparse import ArgumentParser
 from app.tasks import TASKS
 from app.models import MODELS
@@ -215,16 +214,14 @@ def test(params):
 
     logger.info('Predictions is done.')
 
-    predictions = []
-    for test_inst, generated_text in tqdm(zip(test_files, generated_texts), total=len(test_files)):
-        predictions.append({
-            "sentence": test_inst,
-            "generated_sentence": generated_text['generated_text'],
-            "expected_sentence": test_ds.loc[test_ds['sentence'] == test_inst]['query'].values[0] if "query" in test_ds else None
-        })
-
-    predictions = pd.DataFrame(predictions)
-    predictions.to_csv(result_file_path, sep='\t')
+    with open(result_file_path, 'w') as outfile:
+        for test_inst, generated_text in tqdm(zip(test_files, generated_texts), total=len(test_files)):
+            processed_data = {
+                "sentence": test_inst,
+                "model_result": generated_text['generated_text']
+            }
+            json.dump(processed_data, outfile)
+            outfile.write('\n')
 
 
 if __name__ == '__main__':
