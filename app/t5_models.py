@@ -10,7 +10,6 @@ os.environ["CUDA_VISIBLE_DEVICES"] = os.getenv('GPU_DEVICE')
 import torch
 import evaluate
 import numpy as np
-from app.tasks import TASKS
 from typing import Dict
 from tqdm import tqdm
 from transformers import (AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq,
