@@ -48,14 +48,21 @@ if __name__ == '__main__':
 
     set_random_seed(args.random_seed)
 
-    tokenizer = AutoTokenizer.from_pretrained(args.pretrained_model)
+    print(f"pretrained model {args.pretrained_model}")
+
+    tokenizer = AutoTokenizer.from_pretrained(args.pretrained_model, trust_remote_code=True)
+
     if 't5' in args.model_type:
         new_words = ['{', '}']
         logger.info("Adding the missing tokens.")
         tokenizer.add_tokens(new_words)
+    elif 'llama2' in args.model_type:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "right"
 
     model = MODELS[args.model_type](tokenizer=tokenizer)
     task_func = TASKS[args.task]
+    task = args.task
 
     if args.train:
         max_length = params['max_length']
