@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 from tqdm import tqdm
 from app.nshot.json_extractor import json_extractor
 from dotenv import load_dotenv
+from app.nshot.utils import read_prompt_file
 
 load_dotenv()
 # access token with permission to access the model and PRO subscription
@@ -32,13 +33,6 @@ def generate(text):
     )
     return res.strip()
 
-
-def read_prompt_file(prompt_file):
-    with open(prompt_file, 'r') as file:
-        prompt_msg = file.read()
-        return prompt_msg
-
-
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--prompt_file", type=str, required=True)
@@ -58,7 +52,7 @@ if __name__ == '__main__':
 
     with open(args.input_file, 'r') as input_file:
         sentences = input_file.readlines()
-
+        sentences = sentences[1:-1]
         with open(args.result_file, 'w') as outfile:
             for sentence in tqdm(sentences, total=len(sentences)):
                 json_data = {"sentence": sentence}
