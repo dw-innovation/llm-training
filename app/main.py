@@ -1,8 +1,10 @@
 import os
+import pandas as pd
 from dotenv import load_dotenv
 from app.models import MODELS
-from app.tasks import TASKS
+from app.nshot.utils import read_prompt_file
 from transformers import AutoTokenizer
+from huggingface_hub import login
 
 load_dotenv()
 # comment the below lines if you need to use gpu 0.
@@ -25,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_output_path')
     parser.add_argument("--result_file_path")
     parser.add_argument('--random_seed', type=int)
+    parser.add_argument('--sample_ratio', type=float)
     parser.add_argument("--train", action="store_true")
     parser.add_argument("--test", action="store_true")
     parser.add_argument("--debug", action="store_true")
@@ -48,6 +51,10 @@ if __name__ == '__main__':
 
     set_random_seed(args.random_seed)
 
+
+    hf_token = os.getenv("HF_INFERENCE_TOKEN")
+    login(token=hf_token)
+
     print(f"pretrained model {args.pretrained_model}")
 
     tokenizer = AutoTokenizer.from_pretrained(args.pretrained_model, trust_remote_code=True)
@@ -61,7 +68,7 @@ if __name__ == '__main__':
         tokenizer.padding_side = "right"
 
     model = MODELS[args.model_type](tokenizer=tokenizer)
-    task_func = TASKS[args.task]
+
     task = args.task
 
     if args.train:
@@ -74,8 +81,12 @@ if __name__ == '__main__':
         logger.info(f"Max length is {max_length}")
 
         # dataset loading
-        train_ds = task_func(dataset_path=train_file_path, tokenizer=tokenizer, max_length=max_length, debug=debug)
-        val_ds = task_func(dataset_path=val_file_path, tokenizer=tokenizer, max_length=max_length, debug=debug)
+
+        # train_ds = task_func(dataset_path=train_file_path, tokenizer=tokenizer, max_length=max_length, debug=debug, prompt=prompt)
+        # val_ds = task_func(dataset_path=val_file_path, tokenizer=tokenizer, max_length=max_length, debug=debug, prompt=prompt)
+
+        train_ds = pd.read_csv(train_file_path, sep='\t')
+        val_ds = pd.read_csv(train_file_path, sep='\t')
 
         model.train(train_ds, val_ds, params)
 
@@ -88,9 +99,5 @@ if __name__ == '__main__':
         result_file_path = params['result_file_path']
         debug = params['debug']
 
-        test_ds = task_func(dataset_path=test_file_path, tokenizer=tokenizer, max_length=max_length, debug=debug,
-                            test=True)
-
-        test_sentences = test_ds['sentence'].tolist()
-
-        model.test(test_sentences=test_sentences, params=params)
+        test_ds = pd.read_csv(test_file_path, sep='\t')
+        model.test(test_ds=test_ds, params=params)

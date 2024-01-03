@@ -39,4 +39,7 @@ python3 -m app.main \
 --max_length $MAX_LENGTH \
 --eval_metric $EVAL_METRIC \
 --result_file_path $RESULT_FILE_PATH \
---test
+--test \
+--train \
+--debug \
+--sample_ratio 0.001

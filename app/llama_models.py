@@ -1,6 +1,7 @@
 import os
 import json
 from dotenv import load_dotenv
+from app.nshot.utils import read_prompt_file
 
 load_dotenv()
 # comment the below lines if you need to use gpu 0.
@@ -13,17 +14,34 @@ import numpy as np
 from typing import Dict
 from tqdm import tqdm
 from transformers import (AutoTokenizer, AutoModelForCausalLM, DataCollatorForSeq2Seq,
-                          EarlyStoppingCallback, Text2TextGenerationPipeline,TrainingArguments)
+                          EarlyStoppingCallback, pipeline, TrainingArguments, BitsAndBytesConfig)
 from loguru import logger
 from trl import SFTTrainer
 from peft import LoraConfig, get_peft_model, TaskType, PeftConfig, PeftModel
+from datasets import Dataset
 
+# reference: https://github.com/huggingface/trl/blob/main/examples/research_projects/stack_llama_2/scripts/sft_llama2.py
 
 class Llama2Model:
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer
 
     def train(self, train_ds, val_ds, params: Dict):
+        # todo: rename the function name
+        instruction_file = read_prompt_file(prompt_file=f"scripts/{params['task']}/prompt/zero_shot_cot_prompt.txt")
+
+        if params['debug']:
+            random_seed = params['random_seed']
+            sample_ratio = params['sample_ratio']
+            train_ds = train_ds.sample(int(len(train_ds)*sample_ratio), random_state=random_seed)
+            val_ds = val_ds.sample(int(len(val_ds)*sample_ratio), random_state=random_seed)
+
+        train_ds['instruction'] = train_ds.apply(lambda example: f"### Instruction: {instruction_file}\n ### Input: {example.sentence}\n ### Response: {example.query}", axis=1)
+        val_ds['instruction'] = val_ds.apply(lambda example: f"### Instruction: {instruction_file}\n ### Input: {example.sentence}\n ### Response: {example.query}", axis=1)
+
+        train_ds = Dataset.from_pandas(train_ds)
+        val_ds = Dataset.from_pandas(val_ds)
+
         cuda_device = params['cuda_device']
 
         logger.info(f"Available devices are {torch.cuda.device_count()}")
@@ -36,66 +54,39 @@ class Llama2Model:
 
         logger.info(f"Selected device is {device}.")
 
-        # add metric func
-        rouge_score = evaluate.load("rouge")
-        logger.info("Added Rouge metric.")
+        # define LoRA Config
+        lora_config = LoraConfig(
+            r=16,
+            lora_alpha=32,
+            lora_dropout=0.1,
+            target_modules=["q_proj", "v_proj"],
+            bias="none",
+            task_type="CAUSAL_LM"
+        )
 
-        def compute_metrics(eval_preds):
-            preds, labels = eval_preds
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        )
 
-            if isinstance(preds, tuple):
-                preds = preds[0]
-
-            # Replace -100 in the preds as we can't decode them
-            preds = np.where(preds != -100, preds, self.tokenizer.pad_token_id)
-
-            # Decode generated summaries into text
-            decoded_preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
-
-            # Replace -100 in the labels as we can't decode them
-            labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
-            # Decode reference summaries into text
-            decoded_labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
-            # ROUGE expects a newline after each sentence
-            decoded_preds = ["\n".join(pred.strip()) for pred in decoded_preds]
-
-            decoded_labels = ["\n".join(label.strip()) for label in decoded_labels]
-            # Compute ROUGscores
-            result = rouge_score.compute(
-                predictions=decoded_preds, references=decoded_labels, use_stemmer=True
-            )
-            # Extract the median scores
-            result = {key: value * 100 for key, value in result.items()}
-            return {k: round(v, 4) for k, v in result.items()}
 
         # declare model
         print(f"pretrained model {params['pretrained_model']}")
         model = AutoModelForCausalLM.from_pretrained(params['pretrained_model'],
                                                      low_cpu_mem_usage=True,
                                                      trust_remote_code=True,
+                                                     quantization_config=bnb_config,
                                                      return_dict=True,
                                                      torch_dtype=torch.float16,
                                                      device_map="auto",
                                                      )
 
-        model.to(device)
+        model.config.use_cache = False
 
-        # define LoRA Config
-        lora_config = LoraConfig(
-            r=16,
-            lora_alpha=32,
-            lora_dropout=0.1,
-            bias="none",
-            task_type="CAUSAL_LM"
-        )
+        # recheck the following
+        # model.config.pretraining_tp = 1 
 
-        # add LoRa adaptor
-        model = get_peft_model(model, lora_config)
-        model.print_trainable_parameters()
-
-        # declare data collator
-        data_collator = DataCollatorForSeq2Seq(tokenizer=self.tokenizer, model=model, label_pad_token_id=-100,
-                                               pad_to_multiple_of=8)
 
         model_output_path = params['model_output_path']
         learning_rate = params['learning_rate']
@@ -113,11 +104,10 @@ class Llama2Model:
             weight_decay=0.01,
             save_total_limit=1,
             num_train_epochs=epochs,
-            predict_with_generate=True,
-            generation_max_length=max_length,
-            greater_is_better=True,
             auto_find_batch_size=True,
-            metric_for_best_model=params['eval_metric'],
+            # metric_for_best_model=params['eval_metric'],
+            greater_is_better=False,
+            metric_for_best_model='eval_loss',
             load_best_model_at_end=True
         )
 
@@ -127,9 +117,10 @@ class Llama2Model:
             args=training_args,
             train_dataset=train_ds,
             eval_dataset=val_ds,
+            dataset_text_field="instruction",
+            peft_config=lora_config,
             tokenizer=self.tokenizer,
-            data_collator=data_collator,
-            compute_metrics=compute_metrics,
+            max_seq_length= max_length,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=10)]
         )
 
@@ -148,7 +139,9 @@ class Llama2Model:
         if str(device) != "cpu":
             torch.cuda.empty_cache()
 
-    def test(self, test_sentences, params):
+
+    @torch.inference_mode()
+    def test(self, test_ds, params):
         peft_model_id = params['model_output_path']
         config = PeftConfig.from_pretrained(params['model_output_path'])
 
@@ -156,26 +149,34 @@ class Llama2Model:
         model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
         tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
 
-        model = PeftModel.from_pretrained(model, peft_model_id, device_map={"": 0})
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "right"
+
+        model = PeftModel.from_pretrained(model, peft_model_id, device_map='auto')
         model = model.merge_and_unload()
+
+        test_sentences = test_ds['sentence'].tolist()
+
+        device = torch.device(params['cuda_device'] if torch.cuda.is_available() else "cpu")
+
         model.eval()
 
-        device = torch.device(f"cuda:{params['cuda_device']}" if torch.cuda.is_available() else "cpu")
-        pipeline = Text2TextGenerationPipeline(model=model, batch_size=16,
-                                               tokenizer=tokenizer,
-                                               device=device,  # model.device,
-                                               clean_up_tokenization_spaces=True)
-        logger.info('Getting predictions...')
-        generated_texts = pipeline(test_sentences, do_sample=False, max_length=params['max_length'],
-                                   pad_token_id=self.tokenizer.pad_token_id)
+        model.to(device)
 
-        logger.info('Predictions is done.')
-
+        instruction_text = read_prompt_file(prompt_file=f"scripts/{params['task']}/prompt/zero_shot_cot_prompt.txt")
+        
         with open(params['result_file_path'], 'w') as outfile:
-            for test_inst, generated_text in tqdm(zip(test_sentences, generated_texts), total=len(test_sentences)):
+            for sentence in tqdm(test_sentences, total=len(test_sentences)):
+                prompt = f"### Instruction: {instruction_text}\n ### Input: {sentence}\n ### Response:\n "
+                input_ids = tokenizer(prompt, return_tensors="pt", truncation=True).input_ids.cuda()
+
+                outputs = model.generate(input_ids=input_ids, max_new_tokens=params['max_length'], do_sample=True, top_p=0.9,temperature=0.5)
+                generated_instruction =tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0][len(prompt):]
+
                 processed_data = {
-                    "sentence": test_inst,
-                    "model_result": generated_text['generated_text']
+                    "sentence": sentence,
+                    "model_result": generated_instruction
                 }
+
                 json.dump(processed_data, outfile)
                 outfile.write('\n')
