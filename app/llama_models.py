@@ -36,7 +36,10 @@ class Llama2Model:
             train_ds = train_ds.sample(int(len(train_ds)*sample_ratio), random_state=random_seed)
             val_ds = val_ds.sample(int(len(val_ds)*sample_ratio), random_state=random_seed)
 
+        train_ds['sentence'] = train_ds['sentence'].apply(lambda x: x.lower())
         train_ds['instruction'] = train_ds.apply(lambda example: f"### Instruction: {instruction_file}\n ### Input: {example.sentence}\n ### Response: {example.query}", axis=1)
+
+        val_ds['sentence'] = val_ds['sentence'].apply(lambda x: x.lower())
         val_ds['instruction'] = val_ds.apply(lambda example: f"### Instruction: {instruction_file}\n ### Input: {example.sentence}\n ### Response: {example.query}", axis=1)
 
         train_ds = Dataset.from_pandas(train_ds)
@@ -56,8 +59,8 @@ class Llama2Model:
 
         # define LoRA Config
         lora_config = LoraConfig(
-            r=16,
-            lora_alpha=32,
+            r=64,
+            lora_alpha=16,
             lora_dropout=0.1,
             target_modules=["q_proj", "v_proj"],
             bias="none",
@@ -85,7 +88,7 @@ class Llama2Model:
         model.config.use_cache = False
 
         # recheck the following
-        # model.config.pretraining_tp = 1 
+        model.config.pretraining_tp = 1 
 
 
         model_output_path = params['model_output_path']
@@ -93,21 +96,63 @@ class Llama2Model:
         epochs = params['epochs']
         max_length = params['max_length']
 
+        # add metric func
+        rouge_score = evaluate.load("rouge")
+        logger.info("Added Rouge metric.")
+        
+        
+        def preprocess_logits_for_metrics(logits, labels):
+            # the actualy prediction is the first element of the tuple
+            if isinstance(logits, tuple):
+                logits = logits[0]
+            return logits.argmax(dim=-1)
+
+
+        def compute_metrics(eval_preds):
+            preds, labels = eval_preds
+
+            if isinstance(preds, tuple):
+                preds = preds[0]
+
+            # Replace -100 in the preds as we can't decode them
+            preds = np.where(preds != -100, preds, self.tokenizer.pad_token_id)
+
+            # Decode generated summaries into text
+            decoded_preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True)
+
+            # Replace -100 in the labels as we can't decode them
+            labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
+            # Decode reference summaries into text
+            decoded_labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+            # ROUGE expects a newline after each sentence
+            decoded_preds = ["\n".join(pred.strip()) for pred in decoded_preds]
+
+            decoded_labels = ["\n".join(label.strip()) for label in decoded_labels]
+            # Compute ROUGscores
+            result = rouge_score.compute(
+                predictions=decoded_preds, references=decoded_labels, use_stemmer=True
+            )
+            # Extract the median scores
+            result = {key: value * 100 for key, value in result.items()}
+            return {k: round(v, 4) for k, v in result.items()}
+
+
         # declare training arguments
         training_args = TrainingArguments(
             output_dir=params['model_output_path'],
-            evaluation_strategy="epoch",
+            evaluation_strategy="steps",
             do_eval=True,
-            save_strategy="epoch",
+            save_strategy="steps",
+            eval_steps=100,
             learning_rate=learning_rate,
             warmup_steps=int(len(train_ds) / 8),
             weight_decay=0.01,
             save_total_limit=1,
             num_train_epochs=epochs,
             auto_find_batch_size=True,
-            # metric_for_best_model=params['eval_metric'],
-            greater_is_better=False,
-            metric_for_best_model='eval_loss',
+            metric_for_best_model=params['eval_metric'],
+            greater_is_better=True,
+            # metric_for_best_model='eval_loss',
             load_best_model_at_end=True
         )
 
@@ -121,6 +166,8 @@ class Llama2Model:
             peft_config=lora_config,
             tokenizer=self.tokenizer,
             max_seq_length= max_length,
+            compute_metrics=compute_metrics,
+            preprocess_logits_for_metrics = preprocess_logits_for_metrics,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=10)]
         )
 
@@ -167,6 +214,7 @@ class Llama2Model:
         
         with open(params['result_file_path'], 'w') as outfile:
             for sentence in tqdm(test_sentences, total=len(test_sentences)):
+                sentence = sentence.lower()
                 prompt = f"### Instruction: {instruction_text}\n ### Input: {sentence}\n ### Response:\n "
                 input_ids = tokenizer(prompt, return_tensors="pt", truncation=True).input_ids.cuda()
 
