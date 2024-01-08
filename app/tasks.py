@@ -30,13 +30,8 @@ def preprocess_function(examples: Dict[str, Any], max_length: int, tokenizer: ob
                                  return_tensors="np")
     return model_inputs
 
-
-def load_spot_dataset(dataset_path, tokenizer, max_length, debug, test=False, output_type='yaml'):
+def load_spot_dataset(dataset, tokenizer, max_length, test=False, output_type='yaml'):
     output_col = None
-    dataset = pd.read_csv(dataset_path, sep='\t')
-
-    if debug:
-        dataset = dataset[:20]
 
     dataset["sentence"] = dataset["sentence"].apply(lambda x: x.lower())
 

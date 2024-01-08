@@ -17,6 +17,7 @@ from transformers import (AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForS
 from loguru import logger
 from peft import LoraConfig, get_peft_model, TaskType, PeftConfig, PeftModel
 from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, AutoModelForSeq2SeqLM
+from app.tasks import TASKS
 
 
 class T5Model:
@@ -24,6 +25,19 @@ class T5Model:
         self.tokenizer = tokenizer
 
     def train(self, train_ds, val_ds, params: Dict):
+        max_length = params['max_length']
+        task_func = TASKS[params['task']]
+
+        if params['debug']:
+            random_seed = params['random_seed']
+            sample_ratio = params['sample_ratio']
+            train_ds = train_ds.sample(int(len(train_ds)*sample_ratio), random_state=random_seed)
+            val_ds = val_ds.sample(int(len(val_ds)*sample_ratio), random_state=random_seed)
+
+        train_ds = task_func(dataset=train_ds, tokenizer=self.tokenizer, max_length=max_length)
+        val_ds = task_func(dataset=val_ds, tokenizer=self.tokenizer, max_length=max_length)
+
+
         cuda_device = params['cuda_device']
 
         logger.info(f"Available devices are {torch.cuda.device_count()}")
@@ -40,6 +54,8 @@ class T5Model:
         rouge_score = evaluate.load("rouge")
         logger.info("Added Rouge metric.")
 
+
+        # you need to modify the below code for the custom metrics
         def compute_metrics(eval_preds):
             preds, labels = eval_preds
 
@@ -116,6 +132,9 @@ class T5Model:
             load_best_model_at_end=True
         )
 
+
+
+        # If you want to integrate custom loss, you need to create a new trainer, and override the fucntion 'compute_loss' 
         # declare trainer
         trainer = Seq2SeqTrainer(
             model=model,
@@ -143,7 +162,8 @@ class T5Model:
         if str(device) != "cpu":
             torch.cuda.empty_cache()
 
-    def test(self, test_sentences, params):
+    def test(self, test_ds, params):
+        test_sentences = test_ds['sentence'].tolist()
         peft_model_id = params['model_output_path']
         config = PeftConfig.from_pretrained(params['model_output_path'])
 

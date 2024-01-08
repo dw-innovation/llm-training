@@ -22,16 +22,18 @@ Before training the model, you need to create .env file since we need to use GPU
 
 Model training:
 ```shell
-screen -L -Logfile t5_train sudo docker run --rm --gpus all -v /reco/llm_training/:/app --env-file .env --name llm_training llm_training:latest bash scripts/spot/train_t5.sh
+screen -L -Logfile {LOGFILE_NAME} sudo docker run --rm --gpus all -v /reco/llm-training/:/app --env-file .env --name llm_training llm_training:latest bash scripts/spot/train_{MODEL_PREFIX}.sh
 ```
 
-Model testing, you need to remove --train from the script:
-```shell
-screen -L -Logfile t5_train sudo docker run --rm --gpus all -v /reco/llm_training/:/app --env-file .env --name llm_training llm_training:latest bash scripts/spot/train_t5.sh
-```
+Model testing, you need to remove --train from the script and to run the above script.
+
+To fine-tune Llama2, make sure that you add HF credentials in `.env` as follows:
+
+`HF_INFERENCE_TOKEN=YOUR_TOKEN`
 
 
 ### Zero-shot Learning
+
 Zero-shot learning codes for ChatGPT and Llama2 are located under `app/nshot/{model_name}_zero_shot.py`. 
 
 Run the following command to get predictions from ChatGPT
