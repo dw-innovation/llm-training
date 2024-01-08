@@ -6,10 +6,10 @@ MODEL_VERSION=v1
 MODEL_OUT=model/${MODEL_TYPE}_tuned_base_minimized_${MODEL_VERSION}_db-${DATASET_VERSION}_yaml_out
 MAX_LENGTH=1024
 EVAL_METRIC=eval_rouge2
-RESULT_FILE_PATH=results/${MODEL_TYPE}_tuned_base_minimized_${MODEL_VERSION}_db-${DATASET_VERSION}_output_yaml_out.tsv
+RESULT_FILE_PATH=results/${MODEL_TYPE}_tuned_base_minimized_${MODEL_VERSION}_db-${DATASET_VERSION}_output_yaml_out.jsonl
 
-LEARNING_RATE=2e-4
-EPOCHS=50
+LEARNING_RATE=2e-5
+EPOCHS=2
 RANDOM_SEED=0
 
 TRAIN_DATASET=tasks/spot/${DATASET_VERSION}/IMR_Dataset_${DATASET_VERSION}_train_ChatNL_minimized_yaml_out.csv
@@ -39,5 +39,7 @@ python3 -m app.main \
 --max_length $MAX_LENGTH \
 --eval_metric $EVAL_METRIC \
 --result_file_path $RESULT_FILE_PATH \
+--test \
 --train \
---test 
+--debug \
+--sample_ratio 0.1

@@ -36,6 +36,7 @@ class Llama2Model:
             train_ds = train_ds.sample(int(len(train_ds)*sample_ratio), random_state=random_seed)
             val_ds = val_ds.sample(int(len(val_ds)*sample_ratio), random_state=random_seed)
 
+
         train_ds['sentence'] = train_ds['sentence'].apply(lambda x: x.lower())
         train_ds['instruction'] = train_ds.apply(lambda example: f"### Instruction: {instruction_file}\n ### Input: {example.sentence}\n ### Response: {example.query}", axis=1)
 
@@ -145,6 +146,7 @@ class Llama2Model:
             save_strategy="steps",
             eval_steps=100,
             learning_rate=learning_rate,
+            logging_strategy='steps', # log according to log_steps
             warmup_steps=int(len(train_ds) / 8),
             weight_decay=0.01,
             save_total_limit=1,
