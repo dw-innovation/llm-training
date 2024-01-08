@@ -54,6 +54,8 @@ class T5Model:
         rouge_score = evaluate.load("rouge")
         logger.info("Added Rouge metric.")
 
+
+        # you need to modify the below code for the custom metrics
         def compute_metrics(eval_preds):
             preds, labels = eval_preds
 
@@ -130,6 +132,9 @@ class T5Model:
             load_best_model_at_end=True
         )
 
+
+
+        # If you want to integrate custom loss, you need to create a new trainer, and override the fucntion 'compute_loss' 
         # declare trainer
         trainer = Seq2SeqTrainer(
             model=model,
