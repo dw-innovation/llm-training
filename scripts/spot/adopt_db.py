@@ -114,7 +114,7 @@ def convert_yaml_output(sample):
                 #     flt["v"] = flt["v"].replace("mm", "m")
                 if ":" in flt["n"]:
                     flt["n"] = flt["n"].split(":")[-1]
-                flts.append({"name": flt["n"], "operator": flt["op"], "value": flt["v"], "key": flt["k"]})
+                flts.append({"name": flt["n"], "operator": flt["op"], "value": flt["v"]})
 
         if len(flts) > 0:
             minimized_node["filters"] = flts
