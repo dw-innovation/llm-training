@@ -31,7 +31,7 @@ screen -L -Logfile t5_train sudo docker run --rm --gpus all -v /reco/llm_trainin
 ```
 
 
-### Zero-shot Learning
+### Zero-shot Prompting
 Zero-shot learning codes for ChatGPT and Llama2 are located under `app/nshot/{model_name}_zero_shot.py`. 
 
 Run the following command to get predictions from ChatGPT
@@ -42,4 +42,13 @@ bash scripts/{TASK_NAME}/zero_shot_chatgpt.sh
 Run the following command to get predictions from Llama2
 ```shell
 bash scripts/{TASK_NAME}/zero_shot_llama.sh
+```
+
+### Few-shot Prompting
+You need to setup an Elastic search engine that indexes our training samples. 
+
+Add your host into `.env` file:
+
+```
+SEARCH_ENGINE_HOST=http://blablabla.com
 ```
