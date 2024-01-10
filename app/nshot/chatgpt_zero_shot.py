@@ -9,6 +9,8 @@ from loguru import logger
 from app.nshot.utils import read_prompt_file
 
 load_dotenv()
+
+
 def generate(client, query, prompt):
     logger.info(f"Prompting {query}")
     completion = client.chat.completions.create(
@@ -17,7 +19,11 @@ def generate(client, query, prompt):
             {"role": "system", "content": prompt},
             {"role": "user", "content": query}
         ],
-        temperature=0.6
+        temperature=0.5,
+        max_tokens=4095,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
     )
     logger.info(f"chatgpt returned a result")
     raw_output = completion.choices[0].message.content
@@ -46,8 +52,9 @@ if __name__ == '__main__':
                 for sentence in tqdm(sentences, total=len(sentences)):
                     json_data = {"sentence": sentence}
                     sentence = sentence.rstrip()
+                    sentence = f"### Input ###\n{sentence}"
                     generated_text = generate(client=client, query=sentence, prompt=sys_message)
                     json_data["model_result"] = generated_text
                     json_data["parsed_result"] = json_extractor(generated_text)
-                    json.dump(json_data, outfile)
+                    json.dump(json_data, outfile, ensure_ascii=False)
                     outfile.write('\n')
