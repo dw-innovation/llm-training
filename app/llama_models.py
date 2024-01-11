@@ -38,10 +38,10 @@ class Llama2Model:
 
 
         train_ds['sentence'] = train_ds['sentence'].apply(lambda x: x.lower())
-        train_ds['instruction'] = train_ds.apply(lambda example: f"### Instruction: {instruction_file}\n ### Input: {example.sentence}\n ### Response: {example.query}", axis=1)
+        train_ds['instruction'] = train_ds.apply(lambda example: f"### Instruction ###\n{instruction_file}\n### Input ###\n{example.sentence}\n### Output ###\n```yaml\n{example.query}```\n", axis=1)
 
         val_ds['sentence'] = val_ds['sentence'].apply(lambda x: x.lower())
-        val_ds['instruction'] = val_ds.apply(lambda example: f"### Instruction: {instruction_file}\n ### Input: {example.sentence}\n ### Response: {example.query}", axis=1)
+        val_ds['instruction'] = val_ds.apply(lambda example: f"### Instruction ###\n{instruction_file}\n### Input ###\n{example.sentence}\n### Output ###\n```yaml\n{example.query}```\n", axis=1)
 
         train_ds = Dataset.from_pandas(train_ds)
         val_ds = Dataset.from_pandas(val_ds)
