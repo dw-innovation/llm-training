@@ -19,7 +19,7 @@ entities:
       value: [feature value 2]
  - name: [entity name 2]
    id: [entity id 2]
-   properties:
+   features:
     - name: [property name 1]
       value: [property value 1]
     - name: [property name 2]

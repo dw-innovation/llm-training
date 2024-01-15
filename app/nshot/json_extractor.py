@@ -22,5 +22,7 @@ def json_extractor(input_string):
         logging.error(f"Parser error: {e}")
     except yaml.scanner.ScannerError as e:
         logging.error(f"Scanner error: {e}")
+    except yaml.constructor.ConstructorError as e:
+        logging.error(f"Construct error: {e}")
 
     return json_data
