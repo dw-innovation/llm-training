@@ -41,4 +41,4 @@ def search_similar_sentence(sentence, few_shot):
             "score": result['_score'],
         })
 
-        return search_results
+    return search_results

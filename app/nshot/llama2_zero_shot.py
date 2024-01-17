@@ -6,7 +6,7 @@ from transformers import AutoTokenizer
 from tqdm import tqdm
 from app.nshot.json_extractor import json_extractor
 from dotenv import load_dotenv
-from app.nshot.utils import read_prompt_file
+from app.nshot.utils.file_ops import read_prompt_file
 
 load_dotenv()
 # access token with permission to access the model and PRO subscription
@@ -27,9 +27,9 @@ def generate(text):
         payload,
         do_sample=True,
         return_full_text=False,
-        max_new_tokens=2048,
+        max_new_tokens=4095,
         top_p=0.9,
-        temperature=0.6,
+        temperature=0.5,
     )
     return res.strip()
 
@@ -44,7 +44,6 @@ if __name__ == '__main__':
     llama2_prompt = """<s>[INST] <<SYS>>
     {sys_message}
     <</SYS>>
-    Text:
     ```{sentence}``` [/INST]
     """
 
@@ -57,6 +56,7 @@ if __name__ == '__main__':
             for sentence in tqdm(sentences, total=len(sentences)):
                 json_data = {"sentence": sentence}
                 sentence = sentence.rstrip()
+                sentence = f"### Input ###\n{sentence}\n### Output ###"
                 generated_text = generate(llama2_prompt.format(sentence=sentence, sys_message=sys_message))
                 json_data["model_result"] = generated_text
                 json_data["parsed_result"] = json_extractor(generated_text)
