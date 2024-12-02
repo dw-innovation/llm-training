@@ -1,4 +1,6 @@
 import os
+import torch
+import pandas as pd
 import json
 from enum import Enum
 from tqdm import tqdm
@@ -10,6 +12,8 @@ from loguru import logger
 from pydantic import BaseModel
 from typing import List, Optional
 from app.nshot.utils import read_prompt_file
+from sentence_transformers import SentenceTransformer
+import yaml
 
 load_dotenv()
 
@@ -65,15 +69,26 @@ def generate(client, query, prompt, response_prompt):
     # logger.info(f"the document parsed")
     return raw_output
 
-
 if __name__ == '__main__':
     if __name__ == '__main__':
         parser = ArgumentParser()
         parser.add_argument("--prompt_file", type=str, required=True)
         parser.add_argument("--input_file", type=str, required=True)
         parser.add_argument("--result_file", type=str, required=True)
+        parser.add_argument('--few_shot', type=int, default=-1)
 
         args = parser.parse_args()
+        few_shot = args.few_shot
+
+        embedder = None
+        if few_shot!=-1:
+            few_shot_data = pd.read_csv('tasks/spot/dev_v16_3-17_1-2.tsv', sep='\t')
+            few_shot_data['sentence'] = few_shot_data['sentence'].apply(lambda x: x.lower())
+            corpus = few_shot_data['sentence'].tolist()
+            embedder = SentenceTransformer("all-MiniLM-L6-v2")
+            corpus_embeddings = embedder.encode(corpus, convert_to_tensor=True)
+
+        few_shot = args.few_shot
 
         sys_message = read_prompt_file(prompt_file=args.prompt_file)
         client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], organization=os.environ["OPENAI_ORG"])
@@ -85,6 +100,22 @@ if __name__ == '__main__':
                 for sentence in tqdm(sentences, total=len(sentences)):
                     json_data = {"sentence": sentence}
                     sentence = sentence.rstrip().lower()
+
+                    if few_shot!= -1:
+                        query_embedding = embedder.encode(sentence, convert_to_tensor=True)
+                        similarity_scores = embedder.similarity(query_embedding, corpus_embeddings)[0]
+                        scores, indices = torch.topk(similarity_scores, k=few_shot)
+
+                        examples = ''
+                        for score, idx in zip(scores, indices):
+                            example = corpus[idx]
+                            yaml_out_str = few_shot_data[few_shot_data['sentence'] == example]['query'].values[0]
+                            # yaml_out = yaml.safe_load(yaml_out_str)
+                            # print(yaml_out)
+                            examples += '===Input===' + '\n' + example + '\n' + '===Output===' + '\n' + str(yaml_out_str)
+
+                    sentence = examples + '\n' + '===Input==' + '\n' + sentence + '\n' + '===Output===' + '\n'
+
                     generated_text = generate(client=client, query=sentence, prompt=sys_message, response_prompt=Output)
                     # if isinstance(generated_text, tuple):
                     #     generated_text = generated_text
